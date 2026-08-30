@@ -3,12 +3,19 @@ import socket
 from time import sleep
 from protocol import send_data, recv_data, encrypt_file, decrypt_file
 
-HOST = '192.168.0.10'
-PORT = 8080
 
 s = socket.socket()
 
+def configure():
+    HOST = input("enter host address(192.168.0.10 by default): ")
+    PORT = 8080
+    if HOST == "":
+        HOST = "192.168.0.10"
+    return HOST, PORT
+
 def main():
+    HOST, PORT = configure()
+    print("trying to connect to ", HOST, ":", PORT)
     try:
         s.connect((HOST, PORT))
         key = recv_data(s)
