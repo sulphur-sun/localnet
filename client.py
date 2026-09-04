@@ -2,9 +2,10 @@ import os
 import socket
 from time import sleep
 from protocol import send_data, recv_data, encrypt_file, decrypt_file
-
+from cli import CLI
 
 s = socket.socket()
+cli = CLI()
 
 def configure():
     HOST = input("enter host address(192.168.0.10 by default): ")
@@ -41,13 +42,15 @@ def session(key):
             send_data(tag, s)
             send_data(text, s)
 
-        elif cmd == "cd":
-            pwd = os.getcwd()
-            send_data(pwd, s)
+        elif cmd[:2] == "cd":
+            try:
+                cli.cd(cmd[3:].strip())
+                send_data(cli.ls(), s)
+            except Exception as e:
+                send_data(f'Error: {e}', s)
 
         elif cmd == "ls":
-            files = ", ".join([f for f in os.listdir(os.getcwd())])
-            send_data(files, s)
+            send_data(cli.ls(), s)
 
         elif cmd[:8] == 'sendfile':
             nonce = recv_data(s)
@@ -59,7 +62,6 @@ def session(key):
                     f.write(file)
             except Exception as e:
                 raise
-            f.close()
 
 if __name__ == '__main__':
     main()
