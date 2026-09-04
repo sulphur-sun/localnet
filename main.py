@@ -28,7 +28,7 @@ def main():
             s.close()
             sys.exit(0)
 
-        elif cmd == 'ls' or cmd == 'cd':
+        elif cmd == 'ls' or cmd.startswith('cd '):
             data = recv_data(conn)
             print(str(data, encoding="utf-8", errors="ignore"))
 
@@ -42,7 +42,6 @@ def main():
                     f.write(file)
             except Exception as e:
                 raise
-            f.close()
 
         elif cmd[:8] == 'sendfile':
             nonce, tag, text = encrypt_file(key, cmd[9:])
